@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from io import StringIO
-from sequence_processing import load_data, one_hot_encode, calculate_composition, process_sequences
+from sequence_processing import load_data, one_hot_encode, calculate_composition, process_sequences, main
 
 # Sample data for testing
 TEST_CSV = """ID,Sequence
@@ -16,14 +16,17 @@ def sample_dataframe():
     data = StringIO(TEST_CSV)
     return pd.read_csv(data)
 
-def test_load_data(sample_dataframe):
+@pytest.fixture
+def temp_file(tmpdir, sample_dataframe):
+    """Fixture to create a temporary file."""
+    temp_csv = tmpdir.join("test_sequences.csv")
+    sample_dataframe.to_csv(temp_csv, index=False)
+    return temp_csv
+
+def test_load_data(temp_file):
     """Test loading data from a CSV file."""
-    # Write the sample data to a temporary file
-    sample_csv = "test_sequences.csv"
-    sample_dataframe.to_csv(sample_csv, index=False)
-    
     # Test the function
-    df = load_data(sample_csv)
+    df = load_data(str(temp_file))
     assert not df.empty, "DataFrame should not be empty"
     assert list(df.columns) == ["ID", "Sequence"], "Columns should match expected format"
     assert len(df) == 3, "DataFrame should have 3 rows"
@@ -51,19 +54,19 @@ def test_process_sequences(sample_dataframe):
     assert "OneHotEncoded" in processed_df.columns, "'OneHotEncoded' column should exist in DataFrame"
     assert "Composition" in processed_df.columns, "'Composition' column should exist in DataFrame"
     assert len(processed_df) == 3, "Processed DataFrame should have the same number of rows as input"
-    assert len(processed_df.loc[0, "OneHotEncoded"]) == 21 * len("ACDEFGHIKLMNPQRSTVWY"), "One-hot encoding length should match"
+    # Check one-hot encoding length for the longest sequence
+    max_length = sample_dataframe['Sequence'].str.len().max()
+    assert len(processed_df.loc[0, "OneHotEncoded"]) == max_length * 21, "One-hot encoding length should match max_length * 21"
 
-def test_main_workflow(monkeypatch, sample_dataframe):
+def test_main_workflow(monkeypatch, sample_dataframe, tmpdir):
     """Test the main workflow with user input."""
-    from sequence_processing import main
-
     # Mock the input file and user input
-    sample_csv = "test_sequences.csv"
+    sample_csv = tmpdir.join("test_sequences.csv")
     sample_dataframe.to_csv(sample_csv, index=False)
     monkeypatch.setattr('builtins.input', lambda _: "2")  # Simulate user input of '2'
 
     # Run the main function
-    main(sample_csv)
+    main(str(sample_csv))
 
     # Verify the output file
     output_csv = "processed_sequences.csv"
