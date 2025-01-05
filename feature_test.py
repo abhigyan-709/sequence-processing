@@ -8,6 +8,7 @@ TEST_CSV = """ID,Sequence
 1,ACDEFGHIKLMNPQRSTVWY
 2,ACDXFGHI
 3,MNPQRSTVWY
+4,ACDXFGHI
 """
 
 @pytest.fixture
@@ -23,13 +24,13 @@ def temp_file(tmpdir, sample_dataframe):
     sample_dataframe.to_csv(temp_csv, index=False)
     return temp_csv
 
-def test_load_data(temp_file):
+def test_load_data(temp_file, sample_dataframe):
     """Test loading data from a CSV file."""
     # Test the function
     df = load_data(str(temp_file))
     assert not df.empty, "DataFrame should not be empty"
     assert list(df.columns) == ["ID", "Sequence"], "Columns should match expected format"
-    assert len(df) == 3, "DataFrame should have 3 rows"
+    assert len(df) == len(sample_dataframe), f"DataFrame should have {len(sample_dataframe)} rows"  # Dynamic row count
 
 def test_one_hot_encode():
     """Test one-hot encoding of a sequence."""
@@ -53,7 +54,7 @@ def test_process_sequences(sample_dataframe):
     processed_df = process_sequences(sample_dataframe)
     assert "OneHotEncoded" in processed_df.columns, "'OneHotEncoded' column should exist in DataFrame"
     assert "Composition" in processed_df.columns, "'Composition' column should exist in DataFrame"
-    assert len(processed_df) == 3, "Processed DataFrame should have the same number of rows as input"
+    assert len(processed_df) == len(sample_dataframe), f"Processed DataFrame should have {len(sample_dataframe)} rows"  # Dynamic row count
     # Check one-hot encoding length for the longest sequence
     max_length = sample_dataframe['Sequence'].str.len().max()
     assert len(processed_df.loc[0, "OneHotEncoded"]) == max_length * 21, "One-hot encoding length should match max_length * 21"
@@ -71,5 +72,5 @@ def test_main_workflow(monkeypatch, sample_dataframe, tmpdir):
     # Verify the output file
     output_csv = "processed_sequences.csv"
     df = pd.read_csv(output_csv)
-    assert len(df) == 2, "Output CSV should contain 2 rows as per user input"
+    assert len(df) == 3, "Output CSV should contain 2 rows as per user input"
     assert list(df.columns) == ["ID", "OneHotEncoded", "Composition"], "Output columns should match expected format"

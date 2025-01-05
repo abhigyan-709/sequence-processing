@@ -71,9 +71,10 @@ def main(file_path, num_rows=10):
             print(f"OneHotEncoded: {row['OneHotEncoded'][:10]}... (truncated for display)")
             print(f"Composition: {row['Composition']}\n")
 
+        # below code is commented due to un-necessary feature
         # Save results to a CSV file
-        filtered_df[['ID', 'OneHotEncoded', 'Composition']].to_csv("runtime_processed_sequences.csv", index=False)
-        print(f"Processing complete. Results for {num_rows} rows saved to 'runtime_processed_sequences.csv'.")
+        # filtered_df[['ID', 'OneHotEncoded', 'Composition']].to_csv("runtime_processed_sequences.csv", index=False)
+        # print(f"Processing complete. Results for {num_rows} rows saved to 'runtime_processed_sequences.csv'.")
 
     except Exception as e:
         print(f"Error: {e}")
